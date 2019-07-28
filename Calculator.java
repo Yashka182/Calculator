@@ -72,7 +72,7 @@ public class Calculator {
         }
     }
 
-    public float countServer(String operation){
+    public String countServer(String operation){
         String delim = " ";
         String[] tokens = operation.split(delim);
         String operator = tokens[tokens.length - 1];
@@ -101,14 +101,14 @@ public class Calculator {
 
         }
 
-        float result = 0;
+        String result = new String();
         try {
             Class var = Class.forName(className);
             Object oper = var.newInstance();
             Sum op = (Sum) oper;
             op.setFirst(arguments[0]);
             op.setSecond(arguments[1]);
-            result = (float)op.result();
+            result = String.valueOf(op.result());
 
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException ex1) {
             System.out.println(ex1.toString() + "\nOoops something is wrong\nPerhaps this version of Calculator does not support " +
