@@ -1,18 +1,21 @@
 package com.netcracker.gurev.calculator;
 
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
-import io.netty.channel.EventLoopGroup;
+import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
+import io.netty.handler.codec.LineBasedFrameDecoder;
+import io.netty.handler.codec.string.StringDecoder;
+import io.netty.handler.codec.string.StringEncoder;
+
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 
 public class Client {
-    String server;
-    int port;
-    int selfPort;
+    private String server;
+    private int port;
+    private int selfPort;
 
     public Client(String server, int port, int selfPort){
         this.server = server;
@@ -31,14 +34,32 @@ public class Client {
              .handler(new ChannelInitializer<SocketChannel>(){
                  @Override
                  public void initChannel(SocketChannel socketChannel) throws Exception {
-                     socketChannel.pipeline().addLast(new ClientHandler());
+                     ChannelPipeline pipe = socketChannel.pipeline();
+
+                     pipe.addLast(new LineBasedFrameDecoder(80));
+                     pipe.addLast(new StringDecoder());
+                     pipe.addLast(new StringEncoder());
+                     pipe.addLast(new ClientHandler());
                  }
              });
-            System.out.println("Client started");
             Channel channel = b.connect(server, port).sync().channel();
+            System.out.println("Connected to " + channel.remoteAddress());
 
-            channel.write("1 2 +");
-            channel.flush();
+            System.out.println("Client started\n" +
+                    "Enter arguments and operation, divided by spaces");
+
+            BufferedReader read = new BufferedReader(new InputStreamReader(System.in));
+            while(true){
+                String input = read.readLine();
+                if(input.equalsIgnoreCase("the end")){
+                    break;
+                }
+
+                channel.write(input + "\n");
+                channel.flush();
+            }
+            channel.disconnect();
+            System.out.println("Disconnected");
         }catch(Exception e){
             e.printStackTrace();
         }finally {
